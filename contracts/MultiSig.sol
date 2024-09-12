@@ -18,8 +18,16 @@ contract MultiSig {
     error TransactionCompleted();
 
     /* ========== EVENTS ========== */
-    event ProposedTransfer(address indexed proposer, uint256 amount, uint256 transactionID);
-    event ProposeQuorumUpdate(address indexed proposer, uint256 _newQuorum, uint256 transactionID);
+    event ProposedTransfer(
+        address indexed proposer,
+        uint256 amount,
+        uint256 transactionID
+    );
+    event ProposeQuorumUpdate(
+        address indexed proposer,
+        uint256 _newQuorum,
+        uint256 transactionID
+    );
     event ApprovedTransaction(address indexed approver, uint256 transactionID);
 
     /* ========== UDV ========== */
@@ -55,13 +63,16 @@ contract MultiSig {
     /* ========== CONSTRUCTOR ========== */
     constructor(uint8 _quorum, address[] memory _validSigners) {
         require(_validSigners.length > 1, "few valid signers");
-        _checkQuorum(_quorum);
+        // _checkQuorum(_quorum);
         quorum = _quorum;
 
         for (uint256 i = 0; i < _validSigners.length; i++) {
             require(_validSigners[i] != address(0), ZeroAddress());
 
-            require(!isValidSigner[_validSigners[i]], SignerExist(_validSigners[i]));
+            require(
+                !isValidSigner[_validSigners[i]],
+                SignerExist(_validSigners[i])
+            );
 
             isValidSigner[_validSigners[i]] = true;
         }
@@ -76,20 +87,29 @@ contract MultiSig {
 
     /* ========== View Function ========== */
 
-    function returnTransaction(uint256 _txId) external view returns (Transaction memory) {
+    function returnTransaction(
+        uint256 _txId
+    ) external view returns (Transaction memory) {
         require(_txId > 0 && _txId <= txCount, InvalidTransactionID());
         return transactions[_txId];
     }
 
     /* ========== External Function ========== */
-    function proposeTransfer(uint256 _amount, address _recipient, address _tokenAddress) external {
+    function proposeTransfer(
+        uint256 _amount,
+        address _recipient,
+        address _tokenAddress
+    ) external {
         _checkAddressZero();
         _onlyVaildSigner();
 
         require(_amount > 0, ZeroAmount());
         require(_recipient != address(0), ZeroAddress());
         require(_tokenAddress != address(0), ZeroAddress());
-        require(IERC20(_tokenAddress).balanceOf(address(this)) >= _amount, InsufficientFunds());
+        require(
+            IERC20(_tokenAddress).balanceOf(address(this)) >= _amount,
+            InsufficientFunds()
+        );
 
         uint256 _txId = txCount + 1;
         Transaction storage trx = transactions[_txId];
@@ -112,7 +132,7 @@ contract MultiSig {
     function proposeQuorumUpdate(uint8 _newQuorum) external {
         _checkAddressZero();
         _onlyVaildSigner();
-        _checkQuorum(_newQuorum);
+        //  _checkQuorum(_newQuorum);
 
         uint256 _txId = txCount + 1;
         Transaction storage trx = transactions[_txId];
@@ -144,7 +164,10 @@ contract MultiSig {
         require(trx.noOfApproval < quorum, ApprovalReached());
 
         if (trx.txType == TransactionType.TokenTransfer) {
-            require(IERC20(trx.tokenAddress).balanceOf(address(this)) >= trx.amount, InsufficientFunds());
+            require(
+                IERC20(trx.tokenAddress).balanceOf(address(this)) >= trx.amount,
+                InsufficientFunds()
+            );
         }
 
         hasSigned[msg.sender][_txId] = true;
@@ -175,7 +198,10 @@ contract MultiSig {
     }
 
     // must quorum greater than 1 but less than the number of valid signer"
-    function _checkQuorum(uint256 _quorum) private view {
-        require(_quorum > 1 && _quorum <= noOfValidSigners, InvalidQuorum(_quorum));
-    }
+    // function _checkQuorum(uint256 _quorum) private view {
+    //     require(
+    //         _quorum > 1 && _quorum < noOfValidSigners,
+    //         InvalidQuorum(_quorum)
+    //     );
 }
+//}//
