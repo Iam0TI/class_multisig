@@ -63,8 +63,6 @@ contract MultiSig {
     /* ========== CONSTRUCTOR ========== */
     constructor(uint8 _quorum, address[] memory _validSigners) {
         require(_validSigners.length > 1, "few valid signers");
-        // _checkQuorum(_quorum);
-        quorum = _quorum;
 
         for (uint256 i = 0; i < _validSigners.length; i++) {
             require(_validSigners[i] != address(0), ZeroAddress());
@@ -78,7 +76,8 @@ contract MultiSig {
         }
 
         noOfValidSigners = uint8(_validSigners.length);
-
+        _checkQuorum(_quorum);
+        quorum = _quorum;
         if (!isValidSigner[msg.sender]) {
             isValidSigner[msg.sender] = true;
             noOfValidSigners += 1;
@@ -99,7 +98,7 @@ contract MultiSig {
         uint256 _amount,
         address _recipient,
         address _tokenAddress
-    ) external {
+    ) external returns (uint256 _txId) {
         _checkAddressZero();
         _onlyVaildSigner();
 
@@ -111,7 +110,7 @@ contract MultiSig {
             InsufficientFunds()
         );
 
-        uint256 _txId = txCount + 1;
+        _txId = txCount + 1;
         Transaction storage trx = transactions[_txId];
 
         trx.id = _txId;
@@ -129,12 +128,14 @@ contract MultiSig {
         emit ProposedTransfer(msg.sender, _amount, _txId);
     }
 
-    function proposeQuorumUpdate(uint8 _newQuorum) external {
+    function proposeQuorumUpdate(
+        uint8 _newQuorum
+    ) external returns (uint256 _txId) {
         _checkAddressZero();
         _onlyVaildSigner();
         //  _checkQuorum(_newQuorum);
 
-        uint256 _txId = txCount + 1;
+        _txId = txCount + 1;
         Transaction storage trx = transactions[_txId];
 
         trx.id = _txId;
@@ -146,6 +147,7 @@ contract MultiSig {
         trx.noOfApproval = 1;
         trx.transactionSigners.push(msg.sender);
         trx.txType = TransactionType.UpdateQuorum;
+        trx.newQuorum = _newQuorum;
         hasSigned[msg.sender][_txId] = true;
         txCount += 1;
 
@@ -198,10 +200,11 @@ contract MultiSig {
     }
 
     // must quorum greater than 1 but less than the number of valid signer"
-    // function _checkQuorum(uint256 _quorum) private view {
-    //     require(
-    //         _quorum > 1 && _quorum < noOfValidSigners,
-    //         InvalidQuorum(_quorum)
-    //     );
+    function _checkQuorum(uint8 _quorum) private view {
+        require(
+            _quorum > 1 && _quorum < noOfValidSigners,
+            InvalidQuorum(_quorum)
+        );
+    }
 }
 //}//
